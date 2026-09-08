@@ -114,9 +114,15 @@ export function projectCodexApprovalRequest(input: {
   ) {
     return projectApprovalChoices(input);
   }
-  const allow = requiredActionForEffect(interaction, "allowOnce");
+  const allowOnce = optionalActionForEffect(interaction, "allowOnce");
   const allowForSession = optionalActionForEffect(interaction, "allowForSession");
   const allowAlways = optionalActionForEffect(interaction, "allowAlways");
+  const allow = allowOnce ?? allowForSession ?? allowAlways;
+  if (!allow) {
+    throw new Error(
+      "Host Approval must declare an allowOnce, allowForSession, or allowAlways action",
+    );
+  }
   const deny = requiredActionForEffect(interaction, "deny");
 
   const serverName = boundedText(input.serverName, "server name", SERVER_NAME_MAX_LENGTH);

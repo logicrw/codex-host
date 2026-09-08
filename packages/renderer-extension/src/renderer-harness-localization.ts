@@ -78,6 +78,9 @@ const CHINESE_PERMISSION_MODE_LABELS = new Map<string, string>([
   ["Bypass Permissions", "绕过权限"],
   ["Full Access", "完全访问"],
   ["Delegate", "由父会话管理"],
+  ["On request", "按请求询问"],
+  ["Prompt unmatched", "未匹配时询问"],
+  ["Deny unmatched", "未匹配时拒绝"],
 ]);
 
 const CHINESE_PERMISSION_MODE_DESCRIPTIONS = new Map<string, string>([

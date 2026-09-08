@@ -1,8 +1,10 @@
 import {
+  encodeHarnessPluginRoute,
   harnessModelCatalogSchema,
   harnessModelRefSchema,
   harnessPermissionModeCatalogSchema,
   harnessPermissionModeIdSchema,
+  harnessPluginIdSchema,
   harnessThinkingOptionIdSchema,
   decodeHarnessPluginRoute,
 } from "@codexhost/shared-contracts";
@@ -155,6 +157,7 @@ describe("Renderer Composer DOM behavior", () => {
           grok: "ready",
           omp: "ready",
           antigravity: "ready",
+          muse: "ready",
         },
         {
           pi: undefined,
@@ -171,6 +174,7 @@ describe("Renderer Composer DOM behavior", () => {
           "kiro-cli": undefined,
           codebuddy: undefined,
           "cursor-cli": undefined,
+          muse: undefined,
         },
       ),
     ).toEqual([]);
@@ -185,6 +189,7 @@ describe("Renderer Composer DOM behavior", () => {
           grok: "ready",
           omp: "ready",
           antigravity: "ready",
+          muse: "ready",
         },
         {
           pi: undefined,
@@ -201,6 +206,7 @@ describe("Renderer Composer DOM behavior", () => {
           "kiro-cli": undefined,
           codebuddy: undefined,
           "cursor-cli": undefined,
+          muse: undefined,
         },
       ),
     ).toEqual(["deepseek-harness"]);
@@ -215,6 +221,7 @@ describe("Renderer Composer DOM behavior", () => {
           grok: "ready",
           omp: "ready",
           antigravity: "ready",
+          muse: "ready",
         },
         {
           pi: undefined,
@@ -231,6 +238,7 @@ describe("Renderer Composer DOM behavior", () => {
           "kiro-cli": undefined,
           codebuddy: undefined,
           "cursor-cli": undefined,
+          muse: undefined,
         },
       ),
     ).toEqual(["deepseek-harness"]);
@@ -247,6 +255,7 @@ describe("Renderer Composer DOM behavior", () => {
           grok: "checking",
           omp: "checking",
           antigravity: "checking",
+          muse: "checking",
         },
         {
           pi: undefined,
@@ -259,9 +268,10 @@ describe("Renderer Composer DOM behavior", () => {
           "kiro-cli": undefined,
           codebuddy: undefined,
           "cursor-cli": undefined,
+          muse: undefined,
         },
       ),
-    ).toEqual(["pi", "claude-code", "deepseek-harness", "opencode", "grok", "omp", "antigravity"]);
+    ).toEqual(["pi", "claude-code", "deepseek-harness", "opencode", "grok", "omp", "antigravity", "muse"]);
 
     expect(
       passiveHarnessAvailabilityAgents(
@@ -273,6 +283,7 @@ describe("Renderer Composer DOM behavior", () => {
           grok: "ready",
           omp: "ready",
           antigravity: "ready",
+          muse: "ready",
         },
         {
           pi: undefined,
@@ -289,6 +300,7 @@ describe("Renderer Composer DOM behavior", () => {
           "kiro-cli": undefined,
           codebuddy: undefined,
           "cursor-cli": undefined,
+          muse: undefined,
         },
       ),
     ).toEqual([]);
@@ -303,6 +315,7 @@ describe("Renderer Composer DOM behavior", () => {
           grok: "ready",
           omp: "ready",
           antigravity: "ready",
+          muse: "ready",
         },
         {
           pi: undefined,
@@ -319,6 +332,7 @@ describe("Renderer Composer DOM behavior", () => {
           "kiro-cli": undefined,
           codebuddy: undefined,
           "cursor-cli": undefined,
+          muse: undefined,
         },
       ),
     ).toEqual(["deepseek-harness"]);
@@ -1128,6 +1142,65 @@ describe("Renderer Composer DOM behavior", () => {
     expect(isOwnershipSubmissionBlocked("error")).toBe(true);
     expect(isOwnershipSubmissionBlocked("ready")).toBe(false);
     expect(isOwnershipSubmissionBlocked("not-required")).toBe(false);
+  });
+
+  it("restores Muse configuration from its shared route and prefers confirmed Thread state", () => {
+    const model = harnessModelRefSchema.parse({ id: "muse-spark-1.3-contributor" });
+    const thinkingOptionId = harnessThinkingOptionIdSchema.parse("high");
+    const permissionModeId = harnessPermissionModeIdSchema.parse("onRequest");
+    const inspection = {
+      owner: "external" as const,
+      harnessId: "muse",
+      transportModelId: encodeHarnessPluginRoute({
+        harnessId: harnessPluginIdSchema.parse("muse"),
+        model,
+        thinkingOptionId,
+        permissionModeId,
+      }),
+      history: { fork: true, forkAcrossCwd: false, rollbackLastTurn: false },
+      locked: true as const,
+    };
+
+    expect(restoredThreadOwnership(inspection)).toEqual({
+      agent: "muse",
+      model,
+      thinkingOptionId,
+      permissionModeId,
+    });
+    const effectiveModel = harnessModelRefSchema.parse({ id: "muse-spark-1.3" });
+    const effectiveThinkingOptionId = harnessThinkingOptionIdSchema.parse("none");
+    const effectivePermissionModeId = harnessPermissionModeIdSchema.parse("allowAll");
+    expect(
+      restoredThreadOwnership({
+        ...inspection,
+        effectiveModel,
+        effectiveThinkingOptionId,
+        availableThinkingOptions: [{ id: effectiveThinkingOptionId, label: "None" }],
+        effectivePermissionModeId,
+      }),
+    ).toEqual({
+      agent: "muse",
+      model: effectiveModel,
+      thinkingOptionId: effectiveThinkingOptionId,
+      permissionModeId: effectivePermissionModeId,
+    });
+  });
+
+  it("rejects Muse ownership with a missing, malformed, or foreign plugin route", () => {
+    const foreignRoute = encodeHarnessPluginRoute({
+      harnessId: harnessPluginIdSchema.parse("another-plugin"),
+    });
+    for (const transportModelId of ["official-model", "codexhost/plugin-v1@invalid", foreignRoute]) {
+      expect(() =>
+        restoredThreadOwnership({
+          owner: "external",
+          harnessId: "muse",
+          transportModelId,
+          history: { fork: true, forkAcrossCwd: false, rollbackLastTurn: false },
+          locked: true,
+        }),
+      ).toThrow();
+    }
   });
 
   it("resolves Draft Thinking from the selected Model's in-memory Catalog entry", () => {

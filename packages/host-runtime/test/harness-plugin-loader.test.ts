@@ -102,19 +102,6 @@ describe("Harness plugin discovery and loading", () => {
     }
   });
 
-  it.each(["pi", "claude-code", "deepseek-harness", "opencode", "grok", "omp", "antigravity"])(
-    "ships a valid %s manifest and resolvable compiled resources",
-    async (id) => {
-      const location = path.resolve("packages/adapters", id);
-      const manifest = harnessPluginManifestSchema.parse(
-        JSON.parse(await readFile(path.join(location, "manifest.json"), "utf8")),
-      );
-      expect(manifest.id).toBe(id);
-      await expect(pluginResourcePath(location, manifest.entry)).resolves.toMatch(/\.js$/u);
-      if (manifest.icon)
-        await expect(readPluginIcon(location, manifest.icon)).resolves.toMatch(/^data:image\//u);
-    },
-  );
   it.each([
     "pi",
     "claude-code",
@@ -124,6 +111,7 @@ describe("Harness plugin discovery and loading", () => {
     "omp",
     "antigravity",
     "hermes",
+    "muse",
   ])("ships a valid %s manifest and resolvable compiled resources", async (id) => {
     const location = path.resolve("packages/adapters", id);
     const manifest = harnessPluginManifestSchema.parse(
