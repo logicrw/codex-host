@@ -163,6 +163,11 @@ while runtime_running; do
   /bin/sleep 0.05
 done
 
+stale_process_record="$HOME/.codex/.codexhost-native-accounts/.codexhost-process.json"
+if [ -f "$stale_process_record" ]; then
+  /usr/bin/trash "$stale_process_record" >/dev/null 2>&1 || true
+fi
+
 echo 'codexhost dev: stopped the running Codex Desktop'
 `;
 
